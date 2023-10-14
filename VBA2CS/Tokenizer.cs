@@ -7,140 +7,145 @@ using System.Threading.Tasks;
 
 namespace VBA2CS
 {
-    public enum TokenType 
-    {
-        Identifier,
-        Keyword,
-        TypeKeyword,
-        Operator,
-        Literal,
-        Comment,
-        Separator,
-        Whitespace,
-        Unknown
-    }
-
     public class Token
     {
+        public enum TokenType
+        {
+            Keyword,
+            Operator,
+            Literal,
+            Identifier,
+            Delimiter,
+            Comment,
+            Unknown
+        }
+
         public TokenType Type { get; set; }
         public string Value { get; set; }
-        public int Line { get; set; }
-        public int Column { get; set; }
+        public int LineNumber { get; set; }
+        public int ColumnNumber { get; set; }
+
+        public Token(TokenType type, string value, int lineNumber, int columnNumber)
+        {
+            Type = type;
+            Value = value;
+            LineNumber = lineNumber;
+            ColumnNumber = columnNumber;
+        }
+
+        public override string ToString()
+        {
+            return $"[{Type}] {Value} (Line: {LineNumber}, Column: {ColumnNumber})";
+        }
     }
 
     public class Tokenizer
     {
-        private static readonly Regex TokenPattern = new Regex(@"('.*?$)|(\w+)|(\s+)|([=+\-*/(){};])|(-)|(\n)", RegexOptions.Multiline);
-        private int _line;
-        private int _column;
+        private static readonly string[] Keywords = {
+        "IF", "THEN", "ELSE", "END IF", "FOR", "NEXT", "DO", "LOOP", "WHILE", "WEND",
+        "INTEGER", "LONG", "STRING", "DOUBLE", "VARIANT",
+        "FUNCTION", "SUB", "END", "DIM", "SET", "LET", "PUBLIC", "PRIVATE"
+    };
 
-        public Tokenizer()
+        private static readonly string[] Operators = {
+        "+", "-", "*", "/", "^", "MOD",
+        "=", "<", ">", "<=", ">=", "<>",
+        "AND", "OR", "NOT", "XOR", "&"
+    };
+
+        private static readonly string[] Delimiters = {
+        "(", ")", ",", ":", "."
+    };
+
+        public static List<Token> Tokenize(string code)
         {
+            List<Token> tokens = new List<Token>();
 
-        }
+            // Normalize the code (e.g., convert to uppercase for case-insensitivity)
+            code = code.ToUpper();
 
-        public Token NextToken()
-        {
-            // 토큰 추출 로직
-            // 예외 처리 및 에러 메시지 생성
-            return null;
-        }
+            int lineNumber = 1;
+            int columnNumber = 1;
 
-        public List<Token> Tokenize(string code)
-        {
-            var tokens = new List<Token>();
-            _line = 1;
-            _column = 1;
+            string[] lines = code.Split(new char[] { '\n' });
+            string tmpLiteral = string.Empty;
+            bool isLiteral = false;
 
-            var matches = TokenPattern.Matches(code);
-            bool isCommentLine = false;
-
-            foreach (Match match in matches)
+            foreach (var line in lines)
             {
-                var token = new Token();
+                string[] parts = line.Split(new char[] { ' ', '\t' }, StringSplitOptions.TrimEntries);
 
-                if (isCommentLine)
+                foreach (var part in parts)
                 {
-                    if (match.Groups[6].Success) // Newline
-                    {
-                        isCommentLine = false;
-                    }
-                }
+                    if (part == "")
+                        continue;
 
-                if (match.Groups[1].Success)
-                {
-                    isCommentLine = true;
-                    token.Type = TokenType.Comment;
-                    token.Value = match.Value;
-                    token.Line = _line;
-                    token.Column = _column;
-                    tokens.Add(token);
-                    continue;
-                }
-                else if (match.Groups[2].Success)
-                {
-                    if (IsKeyword(match.Groups[2].Value))
+                    // Check for comments
+                    if (part.StartsWith("'"))
                     {
-                        token.Type = TokenType.Keyword;
+                        tokens.Add(new Token(Token.TokenType.Comment, part, lineNumber, columnNumber));
+                        break; // Skip the rest of the line
                     }
+
+                    // Check for keywords
+                    if (isLiteral)
+                    {
+                        tmpLiteral += part;
+                        if (part.EndsWith("\""))
+                        {
+                            tokens.Add(new Token(Token.TokenType.Literal, tmpLiteral, lineNumber, columnNumber));
+                            isLiteral = false;
+                            tmpLiteral = string.Empty;
+                        }
+                    }
+                    else if (Array.Exists(Keywords, keyword => keyword == part))
+                    {
+                        tokens.Add(new Token(Token.TokenType.Keyword, part, lineNumber, columnNumber));
+                    }
+                    // Check for operators
+                    else if (Array.Exists(Operators, op => op == part))
+                    {
+                        tokens.Add(new Token(Token.TokenType.Operator, part, lineNumber, columnNumber));
+                    }
+                    // Check for delimiters
+                    else if (Array.Exists(Delimiters, delimiter => delimiter == part))
+                    {
+                        tokens.Add(new Token(Token.TokenType.Delimiter, part, lineNumber, columnNumber));
+                    }
+                    // Check for string literals
+                    else if (part.StartsWith("\"") && part.EndsWith("\"") && part.Length > 1)
+                    {
+                        tokens.Add(new Token(Token.TokenType.Literal, part, lineNumber, columnNumber));
+                    }
+                    else if (part.StartsWith("\""))
+                    {
+                        tmpLiteral = part;
+                        isLiteral = true;
+                    }
+                    // Check for numeric literals
+                    else if (Regex.IsMatch(part, @"^\d+(\.\d+)?$"))
+                    {
+                        tokens.Add(new Token(Token.TokenType.Literal, part, lineNumber, columnNumber));
+                    }
+                    // Check for date literals
+                    else if (Regex.IsMatch(part, @"^#\d{1,2}/\d{1,2}/\d{4}#$"))
+                    {
+                        tokens.Add(new Token(Token.TokenType.Literal, part, lineNumber, columnNumber));
+                    }
+                    // Otherwise, treat as an identifier
                     else
                     {
-                        token.Type = TokenType.Identifier;
+                        tokens.Add(new Token(Token.TokenType.Identifier, part, lineNumber, columnNumber));
                     }
-                }
-                else if (match.Groups[3].Success)
-                {
-                    token.Type = TokenType.Whitespace;
-                }
-                else if (match.Groups[4].Success)
-                {
-                    token.Type = TokenType.Operator;
-                }
-                else if (match.Groups[5].Success)
-                {
-                    token.Type = TokenType.Operator;
-                }
-                else if (match.Groups[6].Success)
-                {
-                    _line++;
-                }
-                else
-                {
-                    token.Type = TokenType.Unknown;
+
+                    columnNumber += part.Length + 1; // +1 for the space or tab
                 }
 
-                token.Value = match.Value;
-                token.Line = _line;
-                token.Column = _column;
-
-                tokens.Add(token);
-
-                _column++;
+                lineNumber++;
+                columnNumber = 1;
             }
 
             return tokens;
-        }
-
-        private bool IsKeyword(string value)
-        {
-            return new HashSet<string> {
-                "Sub", "Function", "Dim", "As", "If", "Then", "Else", "End",
-                "For", "To", "Next", "While", "Do", "Loop", "Public", "Private",
-                "Const", "Enum", "Type", "Case", "Select", "MsgBox", "Debug",
-                "Print", "Integer", "String", "Boolean", "Option", "Explicit",
-                "Each", "In", "Array", "ByVal", "ByRef", "True", "False", "Not",
-                "And", "Or", "Mod", "Exit", "Continue", "GoTo", "Resume", "On",
-                "Error", "Let", "Set", "Get", "Property", "Friend", "Static",
-                "Global", "Call", "Me", "Nothing", "New", "Class", "Implements",
-                "RaiseEvent", "Event", "Wend", "With", "ReDim", "Preserve",
-                "Erase", "Step", "Until", "Is", "Like", "Optional", "ParamArray",
-                "Variant", "Declare", "Lib", "Alias", "Long", "Single", "Double",
-                "Currency", "Date", "Object", "Byte", "Boolean", "LongLong",
-                "Integer", "WString", "String", "Decimal", "Stop", "End If",
-                "ElseIf", "End Select", "End Sub", "End Function", "End Property",
-                "End Type", "End Enum", "End Class", "End Interface", "End Module",
-                "End With", "End Using", "End Namespace", "End Try", "End Structure"
-            }.Contains(value);
         }
     }
 }

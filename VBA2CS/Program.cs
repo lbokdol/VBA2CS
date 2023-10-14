@@ -91,22 +91,18 @@ End Sub
 ";
 
 string code2 = @"
-' This is a comment
-    Dim x As Integer
-    If x > 0 Then
+If a = ""Hello"" And b = 123 Then
+    ' This is a comment
+    Dim c As String
+    c = a & "" World""
     End If
-    Dim a As Integer
-    Dim b As Integer
-    Dim c As Integer
-    c = a + b
 ";
 
-Tokenizer tokenizer = new Tokenizer();
-var tokens = tokenizer.Tokenize(code);
+var tokens = Tokenizer.Tokenize(code);
 
 foreach (var token in tokens)
 {
-    Console.WriteLine($"Type: {token.Type}, Value: {token.Value}");
+    Console.WriteLine(token.ToString());
 }
 
 /*
