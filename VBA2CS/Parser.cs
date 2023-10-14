@@ -1,116 +1,139 @@
-﻿namespace VBA2CS
+﻿using System.Text;
+
+namespace VBA2CS
 {
     class Parser
     {
-        private List<Token> _tokens;
-        private int _position;
-
-        public Parser(List<Token> tokens)
+        private static readonly Dictionary<string, string> DataTypeMappings = new Dictionary<string, string>
         {
-            _tokens = tokens;
-            _position = 0;
-        }
+            { "INTEGER", "short" },
+            { "LONG", "int" },
+            { "STRING", "string" },
+            { "DOUBLE", "double" },
+            { "VARIANT", "object" },
+            // ... 기타 데이터 타입 매핑 추가 ...
+        };
 
-        public AstNode Parse()
+        private static readonly Dictionary<string, string> OperatorMappings = new Dictionary<string, string>
         {
-            // Implement parsing logic here
-            return null;
-        }
+            { "&", "+" },
+            { "AND", "&&" },
+            { "OR", "||" },
+            { "NOT", "!=" },
+            { "XOR", "^" },
+        };
 
-        public AstFunctionDeclaration ParseFunctionDeclaration()
+        public static string ConvertTokensToCSharp(List<Token> tokens)
         {
-            // 함수 선언 파싱 로직
-            return null;
-        }
+            StringBuilder csharpCode = new StringBuilder();
 
-        public AstIfStatement ParseIfStatement()
-        {
-            // If 문 파싱 로직
-            return null;
-        }
+            for (int i = 0; i < tokens.Count; i++)
+            {
+                Token token = tokens[i];
 
-        public AstForLoop ParseForLoop()
-        {
-            // For 문 파싱 로직
-            return null;
-        }
+                switch (token.Type)
+                {
+                    case Token.TokenType.Keyword:
+                        if (DataTypeMappings.ContainsKey(token.Value))
+                        {
+                            csharpCode.Append(DataTypeMappings[token.Value]);
+                        }
+                        else
+                        {
+                            switch (token.Value)
+                            {
+                                case "DIM":
+                                    csharpCode.Append("var");
+                                    break;
+                                case "SUB":
+                                    csharpCode.Append("void");
+                                    break;
+                                case "FUNCTION":
+                                    csharpCode.Append("public");
+                                    break;
+                                case "IF":
+                                    csharpCode.Append("if");
+                                    break;
+                                case "THEN":
+                                    // 'THEN'은 C#에서 필요하지 않으므로 추가하지 않음
+                                    break;
+                                case "ELSE":
+                                    csharpCode.Append("else");
+                                    break;
+                                case "END IF":
+                                    // 'END IF'는 C#에서 '}'로 표현됨. 
+                                    // 하지만, 이 로직에서는 단순 변환만 수행하므로 추가하지 않음
+                                    break;
+                                case "FOR":
+                                    csharpCode.Append("for");
+                                    break;
+                                case "NEXT":
+                                    // 'NEXT'는 C#에서 '}'로 표현됨.
+                                    // 하지만, 이 로직에서는 단순 변환만 수행하므로 추가하지 않음
+                                    break;
+                                case "DO":
+                                    csharpCode.Append("do");
+                                    break;
+                                case "LOOP":
+                                    csharpCode.Append("while");
+                                    break;
+                                case "WHILE":
+                                    csharpCode.Append("while");
+                                    break;
+                                case "WEND":
+                                    // 'WEND'는 C#에서 '}'로 표현됨.
+                                    // 하지만, 이 로직에서는 단순 변환만 수행하므로 추가하지 않음
+                                    break;
+                                case "SET":
+                                case "LET":
+                                    // VBA의 'SET'과 'LET'은 C#에서 필요하지 않으므로 추가하지 않음
+                                    break;
+                                case "PUBLIC":
+                                    csharpCode.Append("public");
+                                    break;
+                                case "PRIVATE":
+                                    csharpCode.Append("private");
+                                    break;
+                                case "END":
+                                    // 'END'는 종료를 의미하는 키워드이므로, C#에서는 특별한 처리가 필요함
+                                    // 여기서는 단순 변환만 수행하므로 추가하지 않음
+                                    break;
+                                default:
+                                    csharpCode.Append(token.Value.ToLower()); // 기본적으로 VBA 키워드를 소문자로 변환
+                                    break;
+                            }
+                        }
+                        // ... 기타 키워드 변환 로직 추가 ...
+                        break;
 
-        public AstArrayDeclaration ParseArrayDeclaration()
-        {
-            // 배열 선언 파싱 로직
-            return null;
-        }
+                    case Token.TokenType.Operator:
+                        if (OperatorMappings.ContainsKey(token.Value))
+                        {
+                            csharpCode.Append(OperatorMappings[token.Value]);
+                        }
+                        else
+                        {
+                            csharpCode.Append(token.Value);
+                        }
+                        break;
 
-        public AstUserDefinedType ParseUserDefinedType()
-        {
-            // 사용자 정의 타입 파싱 로직
-            return null;
-        }
+                    case Token.TokenType.Literal:
+                    case Token.TokenType.Identifier:
+                    case Token.TokenType.Delimiter:
+                        csharpCode.Append(token.Value);
+                        break;
 
-        public AstEnumDeclaration ParseEnumDeclaration()
-        {
-            // 열거형 선언 파싱 로직
-            return null;
-        }
+                    case Token.TokenType.Comment:
+                        //csharpCode.Append("//" + token.Value.Substring(1)); // VBA의 '를 C#의 //로 변환
+                        break;
 
-        public AstProcedureCall ParseProcedureCall()
-        {
-            // 프로시저 호출 파싱 로직
-            return null;
-        }
+                        // ... 기타 토큰 유형에 대한 변환 로직 추가 ...
+                }
 
-        public AstSelectCase ParseSelectCase()
-        {
-            // Select Case 문 파싱 로직
-            return null;
-        }
+                csharpCode.Append(" "); // 각 토큰 사이에 공백 추가
+            }
 
-        public AstOnError ParseOnError()
-        {
-            // 오류 처리 파싱 로직
-            return null;
-        }
-
-        public AstWithStatement ParseWithStatement()
-        {
-            // With 문 파싱 로직
-            return null;
-        }
-
-        public AstDoLoop ParseDoLoop()
-        {
-            // Do Loop 문 파싱 로직
-            return null;
-        }
-
-        public AstParameter ParseParameter()
-        {
-            // 매개변수 파싱 로직 (ByVal, ByRef, Optional 등을 고려)
-            return null;
-        }
-
-        public AstVariant ParseVariant()
-        {
-            // Variant 타입 파싱 로직
-            return null;
-        }
-
-        public AstExitStatement ParseExitStatement()
-        {
-            // Exit 문 파싱 로직
-            return null;
-        }
-
-        public AstGoToStatement ParseGoToStatement()
-        {
-            // GoTo 문 파싱 로직
-            return null;
-        }
-
-        public AstLabel ParseLabel()
-        {
-            // 레이블 파싱 로직
-            return null;
+            return csharpCode.ToString();
         }
     }
 }

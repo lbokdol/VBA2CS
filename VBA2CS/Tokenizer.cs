@@ -44,18 +44,18 @@ namespace VBA2CS
         private static readonly string[] Keywords = {
         "IF", "THEN", "ELSE", "END IF", "FOR", "NEXT", "DO", "LOOP", "WHILE", "WEND",
         "INTEGER", "LONG", "STRING", "DOUBLE", "VARIANT",
-        "FUNCTION", "SUB", "END", "DIM", "SET", "LET", "PUBLIC", "PRIVATE"
-    };
+        "FUNCTION", "SUB", "END", "DIM", "SET", "LET", "PUBLIC", "PRIVATE", "AS"
+        };
 
         private static readonly string[] Operators = {
         "+", "-", "*", "/", "^", "MOD",
         "=", "<", ">", "<=", ">=", "<>",
         "AND", "OR", "NOT", "XOR", "&"
-    };
+        };
 
         private static readonly string[] Delimiters = {
         "(", ")", ",", ":", "."
-    };
+        };
 
         public static List<Token> Tokenize(string code)
         {
@@ -63,13 +63,14 @@ namespace VBA2CS
 
             // Normalize the code (e.g., convert to uppercase for case-insensitivity)
             code = code.ToUpper();
-
+            
             int lineNumber = 1;
             int columnNumber = 1;
 
             string[] lines = code.Split(new char[] { '\n' });
             string tmpLiteral = string.Empty;
             bool isLiteral = false;
+            bool isEnd = false;
 
             foreach (var line in lines)
             {
@@ -100,6 +101,15 @@ namespace VBA2CS
                     }
                     else if (Array.Exists(Keywords, keyword => keyword == part))
                     {
+                        if (isEnd)
+                        {
+                            isEnd = false;
+                            continue;
+                        }
+
+                        if (part == "END")
+                            isEnd = true;
+
                         tokens.Add(new Token(Token.TokenType.Keyword, part, lineNumber, columnNumber));
                     }
                     // Check for operators

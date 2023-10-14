@@ -98,17 +98,16 @@ If a = ""Hello"" And b = 123 Then
     End If
 ";
 
-var tokens = Tokenizer.Tokenize(code);
+var tokens = Tokenizer.Tokenize(code2);
+var csCode = Parser.ConvertTokensToCSharp(tokens);
 
 foreach (var token in tokens)
 {
     Console.WriteLine(token.ToString());
 }
 
-/*
-Parser parser = new Parser();
-Node root = parser.Parse(tokens);
-
-string csharpCode = parser.ConvertToCSharp(root);
-*/
-//Console.WriteLine($"CSCode = \n{csharpCode}");
+using (StreamWriter sw = new StreamWriter("TestCSCode.cs"))
+{
+    sw.WriteLine(csCode);
+}
+    
