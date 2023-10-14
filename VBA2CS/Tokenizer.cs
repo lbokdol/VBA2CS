@@ -44,7 +44,8 @@ namespace VBA2CS
         private static readonly string[] Keywords = {
         "IF", "THEN", "ELSE", "END IF", "FOR", "NEXT", "DO", "LOOP", "WHILE", "WEND",
         "INTEGER", "LONG", "STRING", "DOUBLE", "VARIANT",
-        "FUNCTION", "SUB", "END", "DIM", "SET", "LET", "PUBLIC", "PRIVATE", "AS"
+        "FUNCTION", "SUB", "END", "DIM", "SET", "LET", "PUBLIC", "PRIVATE", "AS",
+        "SELECT", "CASE", "CASE ELSE"
         };
 
         private static readonly string[] Operators = {

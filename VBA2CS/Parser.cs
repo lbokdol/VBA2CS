@@ -21,6 +21,7 @@ namespace VBA2CS
             { "OR", "||" },
             { "NOT", "!=" },
             { "XOR", "^" },
+            { "<>", "!=" },
         };
 
         public static string ConvertTokensToCSharp(List<Token> tokens)
