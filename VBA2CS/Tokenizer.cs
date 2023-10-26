@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using System.Xml.Linq;
 
 namespace VBA2CS
 {
@@ -42,7 +43,7 @@ namespace VBA2CS
     public class Tokenizer
     {
         private static readonly string[] Keywords = {
-        "IF", "THEN", "ELSE", "END IF", "FOR", "NEXT", "DO", "LOOP", "WHILE", "WEND",
+        "IF", "THEN", "ELSE", "FOR", "NEXT", "DO", "LOOP", "WHILE", "WEND",
         "INTEGER", "LONG", "STRING", "DOUBLE", "VARIANT",
         "FUNCTION", "SUB", "END", "DIM", "SET", "LET", "PUBLIC", "PRIVATE", "AS",
         "SELECT", "CASE", "CASE ELSE"
@@ -157,6 +158,163 @@ namespace VBA2CS
             }
 
             return tokens;
+        }
+
+        public static List<Token> NewTokenize(string code)
+        {
+            List<Token> tokens = new List<Token>();
+
+            // Normalize the code (e.g., convert to uppercase for case-insensitivity)
+            code = code.ToUpper();
+
+            int lineNumber = 1;
+            int columnNumber = 1;
+
+            //string[] lines = code.Split(new char[] { '\n' });
+            //string tmpLiteral = string.Empty;
+
+            StringBuilder buffer = new StringBuilder();
+            bool inStringLiteral = false;
+            bool isComment = false;
+
+            /*
+            foreach (var line in lines)
+            {
+                StringBuilder buffer = new StringBuilder();
+                foreach (char c in line)
+                {
+                    if (char.IsWhiteSpace(c) || Array.Exists(Delimiters, delimiter => delimiter == c.ToString()))
+                    {
+                        if (buffer.Length > 0)
+                        {
+                            ProcessBuffer(buffer.ToString(), tokens, lineNumber, columnNumber, ref isComment);
+                            buffer.Clear();
+                        }
+                        if (!char.IsWhiteSpace(c))
+                        {
+                            tokens.Add(new Token(Token.TokenType.Delimiter, c.ToString(), lineNumber, columnNumber));
+                        }
+                    }
+                    else
+                    {
+                        buffer.Append(c);
+                    }
+                    columnNumber++;
+                }
+                if (buffer.Length > 0)
+                {
+                    ProcessBuffer(buffer.ToString(), tokens, lineNumber, columnNumber, ref isComment);
+                }
+                lineNumber++;
+                columnNumber = 1;
+
+                isComment = false;
+            }
+            */
+
+            foreach (char c in code)
+            {
+                if (isComment)
+                {
+                    if (c == '\n')
+                    {
+                        tokens.Add(new Token(Token.TokenType.Comment, buffer.ToString(), lineNumber, columnNumber));
+
+                        isComment = false;
+                        lineNumber++;
+                        columnNumber = 0;
+
+                        buffer.Clear();
+                    }
+                    else
+                    {
+                        buffer.Append(c);
+                    }
+                }
+                else if (inStringLiteral)
+                {
+                    if (c == '"')
+                    {
+                        inStringLiteral = false;
+                        buffer.Append(c);
+                        tokens.Add(new Token(Token.TokenType.Literal, buffer.ToString(), lineNumber, columnNumber));
+                        buffer.Clear();
+                    }
+                    else
+                    {
+                        buffer.Append(c);
+                    }
+                }
+                else
+                {
+                    if (c == '\'')
+                    {
+                        isComment = true;
+                        buffer.Append(c);
+                    }
+                    else if (c == '"')
+                    {
+                        inStringLiteral = true;
+                        buffer.Append(c);
+                    }
+                    else if (char.IsWhiteSpace(c) || Array.Exists(Delimiters, delimiter => delimiter == c.ToString()))
+                    {
+                        if (buffer.Length > 0)
+                        {
+                            AddTokenFromBuffer(tokens, buffer.ToString(), lineNumber, columnNumber);
+                            buffer.Clear();
+                        }
+
+                        if (c == '\n')
+                        {
+                            lineNumber++;
+                            columnNumber = 0;
+                        }
+                    }
+                    else
+                    {
+                        buffer.Append(c);
+                    }
+                }
+
+                columnNumber++;
+            }
+
+            // Handle any remaining buffer content
+            if (buffer.Length > 0)
+            {
+                AddTokenFromBuffer(tokens, buffer.ToString(), lineNumber, columnNumber);
+            }
+
+            return tokens;
+        }
+
+        private static void AddTokenFromBuffer(List<Token> tokens, string buffer, int lineNumber, int columnNumber)
+        {
+            if (Array.Exists(Keywords, keyword => keyword == buffer.ToUpper()))
+            {
+                tokens.Add(new Token(Token.TokenType.Keyword, buffer.ToUpper(), lineNumber, columnNumber));
+            }
+            else if (Array.Exists(Operators, op => op == buffer))
+            {
+                tokens.Add(new Token(Token.TokenType.Operator, buffer, lineNumber, columnNumber));
+            }
+            else if (Regex.IsMatch(buffer, @"^\d+(\.\d+)?$"))
+            {
+                tokens.Add(new Token(Token.TokenType.Literal, buffer, lineNumber, columnNumber));
+            }
+            else if (Regex.IsMatch(buffer, @"^"".*""$"))
+            {
+                tokens.Add(new Token(Token.TokenType.Literal, buffer, lineNumber, columnNumber));
+            }
+            else if (Regex.IsMatch(buffer, @"^#\d{1,2}/\d{1,2}/\d{4}#$"))
+            {
+                tokens.Add(new Token(Token.TokenType.Literal, buffer, lineNumber, columnNumber));
+            }
+            else
+            {
+                tokens.Add(new Token(Token.TokenType.Identifier, buffer, lineNumber, columnNumber));
+            }
         }
     }
 }

@@ -91,23 +91,28 @@ End Sub
 ";
 
 string code2 = @"
-If a = ""Hello"" And b = 123 Then
-    ' This is a comment
-    Dim c As String
-    c = a & "" World""
-    End If
+Function AddNumbers(a As Integer, b As Integer) As Integer
+    ' A simple function to add two numbers
+    Dim result As Integer
+    result = a + b
+    AddNumbers = result
+End Function
 ";
 
-var tokens = Tokenizer.Tokenize(code2);
-var csCode = Parser.ConvertTokensToCSharp(tokens);
 
+var tokens = Tokenizer.NewTokenize(code2);
+int i = 0;
 foreach (var token in tokens)
 {
-    Console.WriteLine(token.ToString());
+    Console.WriteLine($"{token.ToString()} ,, {i++}");
 }
+
+var csCode = new Parser(tokens);
+var node = csCode.Parse();
+var cscode = csCode.Transpile(node);
 
 using (StreamWriter sw = new StreamWriter("TestCSCode.cs"))
 {
-    sw.WriteLine(csCode);
+    sw.WriteLine(cscode);
 }
-    
+

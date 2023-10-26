@@ -3,158 +3,161 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Xml.Linq;
 
 namespace VBA2CS
 {
-    abstract class AstNode { }
-
-    class AstVariableDeclaration : AstNode
+    public abstract class ASTNode
     {
-        public string VariableName { get; set; }
-        public string VariableType { get; set; }
+        public List<ASTNode> Children { get; } = new List<ASTNode>();
     }
 
-    class AstAssignment : AstNode
+    public class FunctionNode : ASTNode
     {
-        public string VariableName { get; set; }
-        public AstExpression Expression { get; set; }
+        public string Name { get; set; }
+        public string Type { get; set; }
+        public List<VariableNode> Parameters { get; set; } = new List<VariableNode>();
+        public List<ASTNode> Body { get; set; } = new List<ASTNode>();
     }
 
-    abstract class AstExpression : AstNode { }
+    public class SubroutineNode : ASTNode
+    {
+        public string Name { get; set; }
+        public List<VariableNode> Parameters { get; } = new List<VariableNode>();
+        public List<ASTNode> Body { get; set; } = new List<ASTNode>();
+    }
 
-    class AstLiteral : AstExpression
+    public class VariableNode : ASTNode
+    {
+        public string Name { get; set; }
+        public string Type { get; set; }
+    }
+
+    public class ConstantNode : ASTNode
+    {
+        public string Name { get; set; }
+        public Token.TokenType Type { get; set; }
+        public ASTNode Value { get; set; }
+    }
+
+    // 연산자와 표현식
+    public class BinaryOperationNode : ASTNode
+    {
+        public string Operator { get; set; }
+        public ASTNode Left { get; set; }
+        public ASTNode Right { get; set; }
+    }
+
+    public class UnaryOperationNode : ASTNode
+    {
+        public Token.TokenType Operator { get; set; }
+        public ASTNode Operand { get; set; }
+    }
+
+    public class LiteralNode : ASTNode
     {
         public string Value { get; set; }
     }
 
-    class AstBinaryOperation : AstExpression
+    // 제어 구조
+    public class IfNode : ASTNode
     {
-        public AstExpression Left { get; set; }
-        public string Operator { get; set; }
-        public AstExpression Right { get; set; }
+        public ASTNode Condition { get; set; }
+        public List<ASTNode> TrueBranch { get; set; } = new List<ASTNode>();
+        public List<ASTNode> FalseBranch { get; set; } = new List<ASTNode>();
     }
 
-    class AstFunctionDeclaration : AstNode
+    public class ForLoopNode : ASTNode
+    {
+        public VariableNode Iterator { get; set; }
+        public ASTNode Start { get; set; }
+        public ASTNode End { get; set; }
+        public ASTNode Step { get; set; } // 생략 가능
+    }
+
+    public class WhileLoopNode : ASTNode
+    {
+        public ASTNode Condition { get; set; }
+    }
+
+    public class DoLoopNode : ASTNode
+    {
+        public ASTNode Condition { get; set; }
+        public bool Until { get; set; } // Do ... Loop Until 형태인 경우 true
+    }
+
+    public class CommentNode : ASTNode
+    {
+        public string Value { get; set; }
+    }
+
+    // 기본 문장 노드
+    public class StatementNode : ASTNode { }
+
+    // 변수 할당
+    public class AssignmentNode : StatementNode
+    {
+        public VariableNode Target { get; set; }
+        public ASTNode Value { get; set; }
+    }
+
+    // 함수 호출
+    public class FunctionCallNode : StatementNode
     {
         public string FunctionName { get; set; }
-        public string ReturnType { get; set; }
-        public List<AstParameter> Parameters { get; set; }
-        public List<AstNode> Body { get; set; }
+        public List<ASTNode> Arguments { get; } = new List<ASTNode>();
     }
 
-    class AstIfStatement : AstNode
+    // 배열
+    public class ArrayNode : ASTNode
     {
-        public AstExpression Condition { get; set; }
-        public List<AstNode> ThenBody { get; set; }
-        public List<AstNode> ElseBody { get; set; }
+        public string Name { get; set; }
+        public List<ASTNode> Indices { get; } = new List<ASTNode>();
     }
 
-    class AstForLoop : AstNode
+    // Select Case 문
+    public class SelectCaseNode : StatementNode
     {
-        public AstAssignment Initialization { get; set; }
-        public AstExpression Condition { get; set; }
-        public AstAssignment Update { get; set; }
-        public List<AstNode> Body { get; set; }
+        public ASTNode TestExpression { get; set; }
+        public List<CaseNode> Cases { get; } = new List<CaseNode>();
     }
 
-    class AstArrayDeclaration : AstNode
+    public class CaseNode : ASTNode
     {
-        public string ArrayName { get; set; }
-        public string ElementType { get; set; }
-        public int Dimensions { get; set; }
-        public List<AstExpression> InitialValues { get; set; }
+        public List<ASTNode> Conditions { get; } = new List<ASTNode>();
+        public List<StatementNode> Statements { get; } = new List<StatementNode>();
     }
 
-    // 사용자 정의 타입 노드
-    class AstUserDefinedType : AstNode
+    // With 문
+    public class WithNode : StatementNode
     {
-        public string TypeName { get; set; }
-        public List<AstVariableDeclaration> Fields { get; set; }
+        public ASTNode Target { get; set; }
+        public List<StatementNode> Statements { get; } = new List<StatementNode>();
     }
 
-    // 열거형 노드
-    class AstEnumDeclaration : AstNode
+    // On Error 문
+    public class OnErrorNode : StatementNode
     {
-        public string EnumName { get; set; }
-        public List<AstEnumMember> Members { get; set; }
+        public enum ErrorMode
+        {
+            Next,
+            GoTo,
+            ResumeNext
+        }
+
+        public ErrorMode Mode { get; set; }
+        public string Label { get; set; } // GoTo 레이블
     }
 
-    class AstEnumMember : AstNode
-    {
-        public string MemberName { get; set; }
-        public AstExpression Value { get; set; }
-    }
-
-    class AstProcedureCall : AstNode
-    {
-        public string ProcedureName { get; set; }
-        public List<AstExpression> Arguments { get; set; }
-    }
-
-    // Select Case 문 노드
-    class AstSelectCase : AstNode
-    {
-        public AstExpression Condition { get; set; }
-        public List<AstCaseBlock> Cases { get; set; }
-    }
-
-    class AstCaseBlock : AstNode
-    {
-        public AstExpression CaseValue { get; set; }
-        public List<AstNode> Body { get; set; }
-    }
-
-    // 오류 처리 노드
-    class AstOnError : AstNode
-    {
-        public string ErrorHandler { get; set; }
-    }
-
-    // With 문 노드
-    class AstWithStatement : AstNode
-    {
-        public AstExpression Object { get; set; }
-        public List<AstNode> Body { get; set; }
-    }
-
-    // Do Loop 문 노드
-    class AstDoLoop : AstNode
-    {
-        public AstExpression Condition { get; set; }
-        public List<AstNode> Body { get; set; }
-    }
-
-    // ByVal, ByRef 매개변수 노드
-    class AstParameter : AstNode
-    {
-        public string ParameterName { get; set; }
-        public string ParameterType { get; set; }
-        public bool IsByVal { get; set; }
-        public bool IsOptional { get; set; }
-        public AstExpression DefaultValue { get; set; }
-    }
-
-    // Variant 타입 노드
-    class AstVariant : AstNode
-    {
-        public AstExpression Value { get; set; }
-    }
-
-    // Exit 문 노드 (Exit For, Exit Do, Exit Sub, Exit Function 등)
-    class AstExitStatement : AstNode
-    {
-        public string ExitType { get; set; }
-    }
-
-    // GoTo 문 노드
-    class AstGoToStatement : AstNode
+    // GoTo 문
+    public class GoToNode : StatementNode
     {
         public string Label { get; set; }
     }
 
-    // 레이블 노드
-    class AstLabel : AstNode
+    // 레이블
+    public class LabelNode : StatementNode
     {
-        public string LabelName { get; set; }
+        public string Name { get; set; }
     }
 }
