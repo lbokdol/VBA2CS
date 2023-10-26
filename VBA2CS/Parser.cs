@@ -42,7 +42,6 @@ namespace VBA2CS
         private ASTNode ParseStatement()
         {
             var token = LookAhead();
-            Console.WriteLine($"token : {token.Value} !!!{_position}");
 
             if (token.Type == Token.TokenType.Keyword && token.Value == "FUNCTION")
             {

@@ -104,7 +104,7 @@ var tokens = Tokenizer.NewTokenize(code2);
 int i = 0;
 foreach (var token in tokens)
 {
-    Console.WriteLine($"{token.ToString()} ,, {i++}");
+    Console.WriteLine($"{token.ToString()}}");
 }
 
 var csCode = new Parser(tokens);
