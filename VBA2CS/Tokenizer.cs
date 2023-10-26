@@ -170,47 +170,9 @@ namespace VBA2CS
             int lineNumber = 1;
             int columnNumber = 1;
 
-            //string[] lines = code.Split(new char[] { '\n' });
-            //string tmpLiteral = string.Empty;
-
             StringBuilder buffer = new StringBuilder();
             bool inStringLiteral = false;
             bool isComment = false;
-
-            /*
-            foreach (var line in lines)
-            {
-                StringBuilder buffer = new StringBuilder();
-                foreach (char c in line)
-                {
-                    if (char.IsWhiteSpace(c) || Array.Exists(Delimiters, delimiter => delimiter == c.ToString()))
-                    {
-                        if (buffer.Length > 0)
-                        {
-                            ProcessBuffer(buffer.ToString(), tokens, lineNumber, columnNumber, ref isComment);
-                            buffer.Clear();
-                        }
-                        if (!char.IsWhiteSpace(c))
-                        {
-                            tokens.Add(new Token(Token.TokenType.Delimiter, c.ToString(), lineNumber, columnNumber));
-                        }
-                    }
-                    else
-                    {
-                        buffer.Append(c);
-                    }
-                    columnNumber++;
-                }
-                if (buffer.Length > 0)
-                {
-                    ProcessBuffer(buffer.ToString(), tokens, lineNumber, columnNumber, ref isComment);
-                }
-                lineNumber++;
-                columnNumber = 1;
-
-                isComment = false;
-            }
-            */
 
             foreach (char c in code)
             {
